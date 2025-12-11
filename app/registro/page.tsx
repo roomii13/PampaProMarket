@@ -112,9 +112,9 @@ export default function RegistroPage() {
           <div className="mt-6 text-center text-sm">
             <p className="text-muted-foreground">
               Ya tienes cuenta?{' '}
-              <Link href="/login" className="text-primary hover:underline">
-                Inicia sesion
-              </Link>
+             <Link href="/login" className="text-primary hover:underline">
+               Inicia Sesion
+            </Link>
             </p>
           </div>
         </CardContent>
