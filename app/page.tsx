@@ -210,7 +210,7 @@ export default function HomePage() {
       <section className="bg-gradient-to-br from-primary/5 to-primary/10 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            La plataforma de servicios profesionales para <span className="text-primary">Latinoamérica</span>
+            La plataforma de servicios profesionales para <span className="text-primary">La Pampa</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Conectamos prestadores de servicios con contratantes de manera rápida, segura y profesional.

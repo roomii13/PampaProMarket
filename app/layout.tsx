@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, User as UserIcon, Home, Briefcase, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -42,6 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <body className={inter.className}>
           <div className="min-h-screen flex items-center justify-center">
             <div className="animate-pulse text-lg">Cargando...</div>
+              {children}
+            <Toaster richColors position="top-right" />
           </div>
         </body>
       </html>

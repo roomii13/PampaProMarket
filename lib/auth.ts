@@ -9,7 +9,15 @@ export interface User {
   telefono?: string;
   createdAt: string;
   ubicacion?: string;
+  verificado?: boolean;
+  rating_promedio?: number;
+  total_resenas?: number;
+  antecedentes_penales_url?: string;
+  documento_identidad_url?: string;
+  foto_perfil_url?: string;
+  facial_verificado?: boolean;
 }
+
 export interface Solicitud {
   id: string;
   servicioId: string;
@@ -18,19 +26,27 @@ export interface Solicitud {
   contratanteNombre: string;
   prestadorId: string;
   prestadorNombre: string;
-  estado: 'pendiente' | 'aceptada' | 'rechazada' | 'completada';
+  estado: 'pendiente' | 'aceptada' | 'rechazada' | 'completada' | 'cancelada';
   fecha: string;
+  fecha_aceptacion?: string;
+  fecha_completacion?: string;
   mensaje: string;
   imagenes?: string[];
+  ubicacion?: string;
+  precio_acordado?: number;
+  calificacion?: number;
+  comentario_calificacion?: string;
 }
 
 export interface TrabajoRealizado {
   id: string;
   servicioId: string;
   prestadorId: string;
+  titulo?: string;
   imagenUrl: string;
   descripcion: string;
   fecha: string;
+  visible?: boolean;
 }
 
 export interface MensajeChat {
@@ -41,6 +57,8 @@ export interface MensajeChat {
   contenido: string;
   fecha: string;
   leido: boolean;
+  tipo?: 'texto' | 'imagen' | 'documento';
+  archivo_url?: string;
 }
 
 export interface Service {
@@ -52,7 +70,7 @@ export interface Service {
   categoria: string;
   prestadorId: string;
   prestadorNombre: string;
-  imagenes: string[]; // Array de URLs de imágenes
+  imagenes: string[];
   disponibilidad: {
     lunes: { inicio: string, fin: string }[];
     martes: { inicio: string, fin: string }[];
@@ -60,6 +78,7 @@ export interface Service {
     jueves: { inicio: string, fin: string }[];
     viernes: { inicio: string, fin: string }[];
     sabado: { inicio: string, fin: string }[];
+    domingo?: { inicio: string, fin: string }[];
   };
   ubicacion?: string;
   calificacion: number;
@@ -68,6 +87,7 @@ export interface Service {
   createdAt: string;
 }
 
+// ========== CONSTANTES Y DATOS POR DEFECTO (LOCALSTORAGE) ==========
 const USERS_KEY = 'pampapro_users';
 const CURRENT_USER_KEY = 'pampapro_current_user';
 const SERVICES_KEY = 'pampapro_services';
@@ -82,6 +102,8 @@ export const defaultUsers: User[] = [
     rol: 'admin',
     telefono: '+54 11 1234-5678',
     createdAt: new Date().toISOString(),
+    verificado: true,
+    facial_verificado: true
   },
   {
     id: '2',
@@ -91,6 +113,8 @@ export const defaultUsers: User[] = [
     rol: 'prestador',
     telefono: '+54 11 2345-6789',
     createdAt: new Date().toISOString(),
+    verificado: true,
+    rating_promedio: 4.7
   },
   {
     id: '3',
@@ -100,262 +124,197 @@ export const defaultUsers: User[] = [
     rol: 'contratante',
     telefono: '+54 11 3456-7890',
     createdAt: new Date().toISOString(),
+    verificado: true
   },
 ];
 
 export const defaultServices: Service[] = [
-  {
-    id: '1',
-    nombre: 'Limpieza del Hogar',
-    descripcion: 'Servicio completo de limpieza para casas y departamentos. Incluye limpieza de pisos, baños, cocina y áreas comunes.',
-    precio: 15000,
-    precioTipo: 'proyecto', // o 'hora', 'dia', 'unidad'
-    categoria: 'Limpieza',
-    prestadorId: '2',
-    prestadorNombre: 'María González',
-    imagenes: [
-      'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800',
-      'https://images.unsplash.com/photo-1574781330858-1d8eb6d71e8c?auto=format&fit=crop&w-800'
-    ],
-    disponibilidad: {
-      lunes: [{ inicio: '08:00', fin: '18:00' }],
-      martes: [{ inicio: '08:00', fin: '18:00' }],
-      miercoles: [{ inicio: '08:00', fin: '18:00' }],
-      jueves: [{ inicio: '08:00', fin: '18:00' }],
-      viernes: [{ inicio: '08:00', fin: '18:00' }],
-      sabado: [{ inicio: '09:00', fin: '14:00' }]
-    },
-    ubicacion: 'Buenos Aires, Argentina',
-    calificacion: 4.8,
-    reseñas: 24,
-    disponible: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    nombre: 'Plomería General',
-    descripcion: 'Reparación de cañerías, instalación de grifos, destape de desagües y todo tipo de trabajos de plomería.',
-    precio: 25000,
-    precioTipo: 'proyecto',
-    categoria: 'Plomería',
-    prestadorId: '2',
-    prestadorNombre: 'María González',
-    imagenes: [
-      'https://images.unsplash.com/photo-1621967299229-c6e7085b9d04?auto=format&fit=crop&w=800',
-      'https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?auto=format&fit=crop&w-800'
-    ],
-    disponibilidad: {
-      lunes: [{ inicio: '09:00', fin: '17:00' }],
-      martes: [{ inicio: '09:00', fin: '17:00' }],
-      miercoles: [{ inicio: '09:00', fin: '17:00' }],
-      jueves: [{ inicio: '09:00', fin: '17:00' }],
-      viernes: [{ inicio: '09:00', fin: '17:00' }],
-      sabado: [{ inicio: '10:00', fin: '13:00' }]
-    },
-    ubicacion: 'Córdoba, Argentina',
-    calificacion: 4.9,
-    reseñas: 18,
-    disponible: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    nombre: 'Electricidad Residencial',
-    descripcion: 'Instalaciones eléctricas, reparación de cortocircuitos, cambio de tomacorrientes y llaves de luz.',
-    precio: 20000,
-    precioTipo: 'proyecto',
-    categoria: 'Electricidad',
-    prestadorId: '2',
-    prestadorNombre: 'María González',
-    imagenes: [
-      'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800',
-      'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w-800'
-    ],
-    disponibilidad: {
-      lunes: [{ inicio: '08:30', fin: '17:30' }],
-      martes: [{ inicio: '08:30', fin: '17:30' }],
-      miercoles: [{ inicio: '08:30', fin: '17:30' }],
-      jueves: [{ inicio: '08:30', fin: '17:30' }],
-      viernes: [{ inicio: '08:30', fin: '17:30' }],
-      sabado: []
-    },
-    ubicacion: 'Mendoza, Argentina',
-    calificacion: 4.7,
-    reseñas: 32,
-    disponible: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    nombre: 'Jardinería y Paisajismo',
-    descripcion: 'Diseño y mantenimiento de jardines, poda de árboles, instalación de riego automático y césped.',
-    precio: 18000,
-    precioTipo: 'dia',
-    categoria: 'Jardinería',
-    prestadorId: '2',
-    prestadorNombre: 'María González',
-    imagenes: [
-      'https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?auto=format&fit=crop&w=800',
-      'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w-800'
-    ],
-    disponibilidad: {
-      lunes: [{ inicio: '07:00', fin: '16:00' }],
-      martes: [{ inicio: '07:00', fin: '16:00' }],
-      miercoles: [{ inicio: '07:00', fin: '16:00' }],
-      jueves: [{ inicio: '07:00', fin: '16:00' }],
-      viernes: [{ inicio: '07:00', fin: '16:00' }],
-      sabado: [{ inicio: '08:00', fin: '12:00' }]
-    },
-    ubicacion: 'Rosario, Argentina',
-    calificacion: 4.6,
-    reseñas: 15,
-    disponible: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '5',
-    nombre: 'Carpintería a Medida',
-    descripcion: 'Fabricación de muebles personalizados, reparación de muebles antiguos, trabajos en madera de calidad.',
-    precio: 30000,
-    precioTipo: 'proyecto',
-    categoria: 'Carpintería',
-    prestadorId: '2',
-    prestadorNombre: 'María González',
-    imagenes: [
-      'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800',
-      'https://images.unsplash.com/photo-1601762603339-fd61e28a6989?auto=format&fit=crop&w-800'
-    ],
-    disponibilidad: {
-      lunes: [{ inicio: '09:00', fin: '18:00' }],
-      martes: [{ inicio: '09:00', fin: '18:00' }],
-      miercoles: [{ inicio: '09:00', fin: '18:00' }],
-      jueves: [{ inicio: '09:00', fin: '18:00' }],
-      viernes: [{ inicio: '09:00', fin: '18:00' }],
-      sabado: []
-    },
-    ubicacion: 'La Plata, Argentina',
-    calificacion: 4.9,
-    reseñas: 27,
-    disponible: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '6',
-    nombre: 'Clases de Guitarra',
-    descripcion: 'Clases personalizadas de guitarra para todos los niveles. Método práctico y resultados garantizados.',
-    precio: 1500,
-    precioTipo: 'hora',
-    categoria: 'Música',
-    prestadorId: '2',
-    prestadorNombre: 'María González',
-    imagenes: [
-      'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=800',
-      'https://images.unsplash.com/photo-1525201548942-d8732f6617a0?auto=format&fit=crop&w-800'
-    ],
-    disponibilidad: {
-      lunes: [{ inicio: '16:00', fin: '20:00' }],
-      martes: [{ inicio: '16:00', fin: '20:00' }],
-      miercoles: [{ inicio: '16:00', fin: '20:00' }],
-      jueves: [{ inicio: '16:00', fin: '20:00' }],
-      viernes: [{ inicio: '16:00', fin: '20:00' }],
-      sabado: [{ inicio: '10:00', fin: '14:00' }]
-    },
-    ubicacion: 'Online',
-    calificacion: 4.8,
-    reseñas: 42,
-    disponible: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '7',
-    nombre: 'Transporte de Mercadería',
-    descripcion: 'Servicio de mudanzas y transporte de mercadería. Camionetas disponibles para todo tipo de envíos.',
-    precio: 12000,
-    precioTipo: 'dia',
-    categoria: 'Transporte',
-    prestadorId: '2',
-    prestadorNombre: 'María González',
-    imagenes: [
-      'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800',
-      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w-800'
-    ],
-    disponibilidad: {
-      lunes: [{ inicio: '07:00', fin: '19:00' }],
-      martes: [{ inicio: '07:00', fin: '19:00' }],
-      miercoles: [{ inicio: '07:00', fin: '19:00' }],
-      jueves: [{ inicio: '07:00', fin: '19:00' }],
-      viernes: [{ inicio: '07:00', fin: '19:00' }],
-      sabado: [{ inicio: '08:00', fin: '15:00' }]
-      
-    },
-    ubicacion: 'Tucumán, Argentina',
-    calificacion: 4.5,
-    reseñas: 38,
-    disponible: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '8',
-    nombre: 'Diseño Gráfico Profesional',
-    descripcion: 'Creación de logos, branding, folletos y material gráfico para empresas y emprendedores.',
-    precio: 8000,
-    precioTipo: 'proyecto',
-    categoria: 'Diseño',
-    prestadorId: '2',
-    prestadorNombre: 'María González',
-    imagenes: [
-      'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800',
-      'https://images.unsplash.com/photo-1558655146-9f40138edfeb?auto=format&fit=crop&w-800'
-    ],
-    disponibilidad: {
-      lunes: [{ inicio: '10:00', fin: '19:00' }],
-      martes: [{ inicio: '10:00', fin: '19:00' }],
-      miercoles: [{ inicio: '10:00', fin: '19:00' }],
-      jueves: [{ inicio: '10:00', fin: '19:00' }],
-      viernes: [{ inicio: '10:00', fin: '19:00' }],
-      sabado: []
-      
-    },
-    ubicacion: 'Online',
-    calificacion: 4.9,
-    reseñas: 56,
-    disponible: true,
-    createdAt: new Date().toISOString(),
-  }
+  // ... (mantener tus servicios actuales)
 ];
 
+// ========== FUNCIONES HÍBRIDAS ==========
+
+/**
+ * Configuración para determinar si usamos backend o localStorage
+ */
+const USE_BACKEND = process.env.NEXT_PUBLIC_USE_BACKEND === 'true';
+
+/**
+ * Inicializa datos dependiendo del modo
+ */
 export function initializeData() {
   if (typeof window === 'undefined') return;
   
-  const users = localStorage.getItem(USERS_KEY);
-  if (!users) {
-    localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
-  }
-  
-  const services = localStorage.getItem(SERVICES_KEY);
-  if (!services) {
-    localStorage.setItem(SERVICES_KEY, JSON.stringify(defaultServices));
-  }
-  
-  const solicitudes = localStorage.getItem(SOLICITUDES_KEY);
-  if (!solicitudes) {
-    localStorage.setItem(SOLICITUDES_KEY, JSON.stringify([]));
+  // Solo inicializar localStorage si no estamos usando backend
+  if (!USE_BACKEND) {
+    const users = localStorage.getItem(USERS_KEY);
+    if (!users) {
+      localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
+    }
+    
+    const services = localStorage.getItem(SERVICES_KEY);
+    if (!services) {
+      localStorage.setItem(SERVICES_KEY, JSON.stringify(defaultServices));
+    }
+    
+    const solicitudes = localStorage.getItem(SOLICITUDES_KEY);
+    if (!solicitudes) {
+      localStorage.setItem(SOLICITUDES_KEY, JSON.stringify([]));
+    }
   }
 }
 
-export function getUsers(): User[] {
+/**
+ * Obtiene el usuario actual desde localStorage o backend
+ */
+export async function getCurrentUser(): Promise<User | null> {
+  if (typeof window === 'undefined') return null;
+  
+  if (USE_BACKEND) {
+    try {
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.user;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error obteniendo usuario:', error);
+      return null;
+    }
+  } else {
+    // Modo localStorage
+    const data = localStorage.getItem(CURRENT_USER_KEY);
+    return data ? JSON.parse(data) : null;
+  }
+}
+
+/**
+ * Login - Intenta con backend, falla a localStorage
+ */
+export async function login(email: string, password: string): Promise<User | null> {
+  if (USE_BACKEND) {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+      
+      if (!response.ok) {
+        // Fallback a localStorage si el backend falla
+        console.warn('Backend falló, usando localStorage');
+        return loginLocal(email, password);
+      }
+      
+      const data = await response.json();
+      return data.user;
+    } catch (error) {
+      console.error('Error en login con backend:', error);
+      return loginLocal(email, password);
+    }
+  } else {
+    return loginLocal(email, password);
+  }
+}
+
+/**
+ * Login con localStorage (fallback)
+ */
+function loginLocal(email: string, password: string): User | null {
+  const users = getUsersLocal();
+  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  
+  // Contraseña hardcodeada para demo
+  if (user && password === '123456') {
+    setCurrentUserLocal(user);
+    return user;
+  }
+  return null;
+}
+
+/**
+ * Registro - Intenta con backend, falla a localStorage
+ */
+export async function register(userData: any): Promise<User> {
+  if (USE_BACKEND) {
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...userData,
+          password: '123456',
+          confirmPassword: '123456'
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error en registro');
+      }
+      
+      const data = await response.json();
+      return data.user;
+    } catch (error) {
+      console.error('Error en registro con backend:', error);
+      // Fallback a localStorage
+      return registerLocal(userData);
+    }
+  } else {
+    return registerLocal(userData);
+  }
+}
+
+/**
+ * Registro con localStorage (fallback)
+ */
+function registerLocal(userData: any): User {
+  const users = getUsersLocal();
+  const newUser: User = {
+    ...userData,
+    id: Date.now().toString(),
+    createdAt: new Date().toISOString(),
+  };
+  
+  users.push(newUser);
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  setCurrentUserLocal(newUser);
+  return newUser;
+}
+
+/**
+ * Logout - Limpia sesión en ambos lados
+ */
+export async function logout() {
+  if (USE_BACKEND) {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Error en logout con backend:', error);
+    }
+  }
+  
+  // Siempre limpiar localStorage
+  setCurrentUserLocal(null);
+}
+
+// ========== FUNCIONES DE LOCALSTORAGE (PARA COMPATIBILIDAD) ==========
+
+export function getUsersLocal(): User[] {
   if (typeof window === 'undefined') return [];
   const data = localStorage.getItem(USERS_KEY);
   return data ? JSON.parse(data) : [];
 }
 
-export function getCurrentUser(): User | null {
-  if (typeof window === 'undefined') return null;
-  const data = localStorage.getItem(CURRENT_USER_KEY);
-  return data ? JSON.parse(data) : null;
-}
-
-export function setCurrentUser(user: User | null) {
+function setCurrentUserLocal(user: User | null) {
   if (typeof window === 'undefined') return;
   if (user) {
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
@@ -364,41 +323,14 @@ export function setCurrentUser(user: User | null) {
   }
 }
 
-export function login(email: string, password: string): User | null {
-  const users = getUsers();
-  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (user && password === '123456') {
-    setCurrentUser(user);
-    return user;
-  }
-  return null;
-}
-
-export function logout() {
-  setCurrentUser(null);
-}
-
-export function register(userData: Omit<User, 'id' | 'createdAt'>): User {
-  const users = getUsers();
-  const newUser: User = {
-    ...userData,
-    id: Date.now().toString(),
-    createdAt: new Date().toISOString(),
-  };
-  users.push(newUser);
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  setCurrentUser(newUser);
-  return newUser;
-}
-
-export function getServices(): Service[] {
+export function getServicesLocal(): Service[] {
   if (typeof window === 'undefined') return [];
   const data = localStorage.getItem(SERVICES_KEY);
   return data ? JSON.parse(data) : [];
 }
 
-export function addService(service: Omit<Service, 'id'>): Service {
-  const services = getServices();
+export function addServiceLocal(service: Omit<Service, 'id'>): Service {
+  const services = getServicesLocal();
   const newService: Service = {
     ...service,
     id: Date.now().toString(),
@@ -408,8 +340,8 @@ export function addService(service: Omit<Service, 'id'>): Service {
   return newService;
 }
 
-export function updateService(id: string, updates: Partial<Service>) {
-  const services = getServices();
+export function updateServiceLocal(id: string, updates: Partial<Service>) {
+  const services = getServicesLocal();
   const index = services.findIndex(s => s.id === id);
   if (index !== -1) {
     services[index] = { ...services[index], ...updates };
@@ -417,19 +349,19 @@ export function updateService(id: string, updates: Partial<Service>) {
   }
 }
 
-export function deleteService(id: string) {
-  const services = getServices().filter(s => s.id !== id);
+export function deleteServiceLocal(id: string) {
+  const services = getServicesLocal().filter(s => s.id !== id);
   localStorage.setItem(SERVICES_KEY, JSON.stringify(services));
 }
 
-export function getSolicitudes(): Solicitud[] {
+export function getSolicitudesLocal(): Solicitud[] {
   if (typeof window === 'undefined') return [];
   const data = localStorage.getItem(SOLICITUDES_KEY);
   return data ? JSON.parse(data) : [];
 }
 
-export function addSolicitud(solicitud: Omit<Solicitud, 'id' | 'fecha'>): Solicitud {
-  const solicitudes = getSolicitudes();
+export function addSolicitudLocal(solicitud: Omit<Solicitud, 'id' | 'fecha'>): Solicitud {
+  const solicitudes = getSolicitudesLocal();
   const newSolicitud: Solicitud = {
     ...solicitud,
     id: Date.now().toString(),
@@ -440,8 +372,8 @@ export function addSolicitud(solicitud: Omit<Solicitud, 'id' | 'fecha'>): Solici
   return newSolicitud;
 }
 
-export function updateSolicitud(id: string, updates: Partial<Solicitud>) {
-  const solicitudes = getSolicitudes();
+export function updateSolicitudLocal(id: string, updates: Partial<Solicitud>) {
+  const solicitudes = getSolicitudesLocal();
   const index = solicitudes.findIndex(s => s.id === id);
   if (index !== -1) {
     solicitudes[index] = { ...solicitudes[index], ...updates };
@@ -449,16 +381,190 @@ export function updateSolicitud(id: string, updates: Partial<Solicitud>) {
   }
 }
 
-export function deleteUser(id: string) {
-  const users = getUsers().filter(u => u.id !== id);
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
+// ========== FUNCIONES PARA EL FRONTEND (ABSTRACCIÓN) ==========
 
-export function updateUser(id: string, updates: Partial<User>) {
-  const users = getUsers();
-  const index = users.findIndex(u => u.id === id);
-  if (index !== -1) {
-    users[index] = { ...users[index], ...updates };
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+/**
+ * Obtener servicios - Decide según USE_BACKEND
+ */
+export async function getServices(): Promise<Service[]> {
+  if (USE_BACKEND) {
+    try {
+      const response = await fetch('/api/services');
+      if (response.ok) {
+        return await response.json();
+      }
+      return getServicesLocal();
+    } catch (error) {
+      console.error('Error obteniendo servicios:', error);
+      return getServicesLocal();
+    }
+  } else {
+    return getServicesLocal();
   }
 }
+
+/**
+ * Agregar servicio - Decide según USE_BACKEND
+ */
+export async function addService(service: Omit<Service, 'id'>): Promise<Service> {
+  if (USE_BACKEND) {
+    try {
+      const response = await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(service)
+      });
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      throw new Error('Error agregando servicio');
+    } catch (error) {
+      console.error('Error agregando servicio:', error);
+      return addServiceLocal(service);
+    }
+  } else {
+    return addServiceLocal(service);
+  }
+}
+
+/**
+ * Verificación facial - Solo backend
+ */
+export async function verifyFace(formData: FormData): Promise<any> {
+  try {
+    const response = await fetch('/api/verification', {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error en verificación');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error en verificación facial:', error);
+    throw error;
+  }
+}
+
+/**
+ * Subir antecedentes penales - Solo backend
+ */
+export async function uploadAntecedentesPenales(file: File, userId: string): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('tipo', 'certificado');
+  formData.append('userId', userId);
+  
+  try {
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error subiendo archivo');
+    }
+    
+    const data = await response.json();
+    
+    // Actualizar usuario con la URL del certificado
+    await fetch(`/api/users/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        antecedentes_penales_url: data.url
+      })
+    });
+    
+    return data.url;
+  } catch (error) {
+    console.error('Error subiendo antecedentes:', error);
+    throw error;
+  }
+}
+
+/**
+ * Helper para verificar si el backend está disponible
+ */
+export async function checkBackendStatus(): Promise<boolean> {
+  try {
+    const response = await fetch('/api/health', { 
+      method: 'GET',
+      cache: 'no-store'
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Inicializar aplicación detectando modo automáticamente
+ */
+export async function initializeApp() {
+  if (typeof window === 'undefined') return;
+  
+  // Verificar si el backend está disponible
+  const backendAvailable = await checkBackendStatus();
+  
+  if (backendAvailable && !USE_BACKEND) {
+    console.log('✅ Backend disponible, migrando datos...');
+    await migrateLocalDataToBackend();
+  } else if (!backendAvailable && USE_BACKEND) {
+    console.warn('⚠️ Backend no disponible, usando localStorage');
+    // Podrías mostrar una notificación al usuario
+  }
+  
+  initializeData();
+}
+
+/**
+ * Migrar datos de localStorage al backend
+ */
+async function migrateLocalDataToBackend() {
+  try {
+    const users = getUsersLocal();
+    const services = getServicesLocal();
+    const solicitudes = getSolicitudesLocal();
+    
+    // Migrar usuarios
+    for (const user of users) {
+      if (user.email !== 'admin@pampapro.com') {
+        await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre: user.nombre,
+            apellido: user.apellido,
+            email: user.email,
+            password: '123456',
+            confirmPassword: '123456',
+            rol: user.rol,
+            telefono: user.telefono
+          })
+        });
+      }
+    }
+    
+    console.log('✅ Datos migrados al backend');
+  } catch (error) {
+    console.error('Error migrando datos:', error);
+  }
+}
+
+// Exportar funciones con nombres compatibles
+export {
+  getServicesLocal as getServices,
+  addServiceLocal as addService,
+  updateServiceLocal as updateService,
+  deleteServiceLocal as deleteService,
+  getSolicitudesLocal as getSolicitudes,
+  addSolicitudLocal as addSolicitud,
+  updateSolicitudLocal as updateSolicitud,
+  getUsersLocal as getUsers,
+  updateUser as updateUserLocal,
+  deleteUser as deleteUserLocal
+};
